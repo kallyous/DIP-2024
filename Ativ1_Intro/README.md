@@ -1,7 +1,7 @@
 
 # DIP - 2024
 
-## Atividade 4 - Transformação de Intensidade 
+## Atividade 1 - Introdução
 
 Lucas Carvalho Flores  
 Ufal 2024
