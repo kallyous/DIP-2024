@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+numpy = "*"
+pandas = "*"
+matplotlib = "*"
+seaborn = "*"
+keras = "*"
+scikit-learn = "*"
+opencv-python = "*"
+torch = "*"
+requests = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"

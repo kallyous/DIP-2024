@@ -13,7 +13,7 @@ Ufal 2024
 
 ### Atividades
 
-Ativ 1 - TODO
+[Ativ 1 - Inbtrodução](Ativ1_Intro)
 
 [Ativ 2 - Manipulação de Arrays](Ativ2_ManipArrays)
 
