@@ -8,11 +8,6 @@ import numpy as np
 import cv2
 
 
-""" PROCEDIMENTOS """
-
-
-
-
 """ ENTRADA """
 
 # Carregar a imagem em escala de cinza
@@ -29,16 +24,22 @@ cv2.imshow('Original', image)
 
 """ MULTIPLICAÇÃO POR ESCALAR """
 
+'''
 # Vetoriza função de multiplicação.
 vectorized_multi = np.vectorize(lambda x: x * 1.25)
 
-'''Cria ndarray recipiente, para aplicar função em todos os canais
-da imagem original.'''
+# Cria ndarray recipiente, para aplicar função em todos os canais
+# da imagem original.
 img_multi = np.zeros_like(image)
 
 # Laço para iterar todos os canais da imagem.
 for i in range(0, 3):
     img_multi[:, :, i] = vectorized_multi(image[:, :, i])
+'''
+
+# Faz a mesma coisa que o trecho de código anterior, e ainda por cima
+# é segura contra estouro de valor.
+img_multi = cv2.multiply(image, np.array([1.5, 1.5, 1.5]))
 
 cv2.imshow('Multiplicacao', img_multi)
 
