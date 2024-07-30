@@ -1,11 +1,10 @@
 
-import os
 import numpy as np
 import cv2
-import math
 
 
 """ PROCEDIMENTOS """
+
 
 def inverse(x):
     """Inverte um pixel."""
@@ -49,7 +48,7 @@ cv2.waitKey(0)
 
 """ INVERSA """
 
-# Vetorizar função de inversão para ser aplicada em uma array numpy multidimensional.
+# Vetorizar função para ser aplicada em uma array numpy multidimensional.
 vectorized_inverse = np.vectorize(inverse)
 
 # Aplica função em todos so canais de todos dos pixeis da imagem.
@@ -64,17 +63,21 @@ cv2.waitKey(0)
 
 """ GAMMA CORRECTION """
 
-# Vetorizar função de correção gamma para ser aplicada em uma array numpy multidimensional.
-vectorized_gamma_correction = np.vectorize(gamma_correction)
+'''Vetorizar função de correção gamma para ser aplicada em uma array
+numpy multidimensional.'''
+vctrzd_gamma_correction = np.vectorize(gamma_correction)
 
-'''Cria uma numpy ndarray com mesmas dimensões que a imagem original, inicializada com zeros,
-para armazenar os canais sendo processados por vectorized_gamma_correction.'''
-# TODO: Ainda não entendi porque isso  é necessário com a função de correção gamma, mas não para a inversão.
+'''Cria uma numpy ndarray com mesmas dimensões que a imagem original,
+inicializada com zeros, para armazenar os canais sendo processados por
+vectorized_gamma_correction. TODO: Ainda não entendi porque isso  é
+necessário com a função de correção gamma, mas não para a inversão.'''
 img_gamma_corrected = np.zeros_like(img_src)
 
-# Laço que aplica vectorized_gamma_correction() a cada canal de img_src e armazena o resultado em img_gamma_corrected.
+'''Laço que aplica vectorized_gamma_correction() a cada canal de img_src e
+armazena o resultado em img_gamma_corrected.'''
 for i in range(3):  # Para cada canal de cor (B, G, R)
-    img_gamma_corrected[:, :, i] = vectorized_gamma_correction(img_src[:, :, i], gamma_value)
+    img_gamma_corrected[:, :, i] = vctrzd_gamma_correction(img_src[:, :, i],
+                                                           gamma_value)
 
 # Exibe resultado.
 cv2.imshow('Correcao Gamma', img_gamma_corrected)
