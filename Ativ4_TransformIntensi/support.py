@@ -120,14 +120,6 @@ def invert_image(image):
     raise Exception(f'image.shape esperado 2 ou 3, recebido {shape}')
 
 
-""" TRANSFORMAÇÕES DE INTENSIDADE """
+""" GAMMA """
 
-# Inverter intensidade
 
-# Função logaritmica
-
-# Função potência
-
-# Logaritmica inversa
-
-# Potência inversa
