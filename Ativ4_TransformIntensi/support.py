@@ -86,23 +86,23 @@ def quantize(x, ruler):
 """ TRANSFORMAÇÕES BÁSICAS """
 
 
-# CROP / RECORTE
+# Crop / Recorte
 def cropImage(image, start_row, start_col, end_row, end_col):
     return image[start_row:end_row, start_col:end_col]
 
 
-# INVERSE / NEGATIVA
-
-
+# Inverse / Negativa em Unsigned Int 8 bits
 def invert(x):
     return 255 - x
 
 
+# Aplica invert(x) em imagem cinza.
 def invert_gray(gray_img):
     vctrzd_invert = np.vectorize(invert)
     return vctrzd_invert(gray_img)
 
 
+# Aplica invert(x) em imagem colorida, canal por canal.
 def invert_color(color_img):
     vctrzd_invert = np.vectorize(invert)
     img_inv = np.zeros_like(color_img)
@@ -111,6 +111,7 @@ def invert_color(color_img):
     return img_inv
 
 
+# Aplica invert_cinza() ou invert_color(), apropriadamente.
 def invert_image(image):
     shape = image.shape
     if len(shape) == 2:
@@ -123,3 +124,24 @@ def invert_image(image):
 """ GAMMA """
 
 
+# Correção gamma em Unsigned Int 8 bits
+def gamma_correct(x, gamma):
+    """
+    Aplica correção gamma a um único valor de intensidade de pixel.
+
+    Parameters:
+    x (int): Intensidade do pixel (0-255).
+    gamma (float): Valor gamma para correção.
+
+    Returns:
+    int: Novo valor de intensidade após correção gamma.
+    """
+
+    # Normaliza o valor do pixel para [0, 1]
+    normalized = x / 255.0
+
+    # Aplica a correção gamma
+    corrected = normalized ** gamma
+
+    # Converte de volta para a escala [0, 255]
+    return corrected * 255.0

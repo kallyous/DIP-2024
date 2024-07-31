@@ -20,3 +20,5 @@ Ufal 2024
 [Ativ 3 - Manipulação  de Intensidade](Ativ3_ManipIntensi)
 
 [Ativ 4 - Transformação de Intensidade](Ativ4_TransformIntensi)
+
+[Ativ 5 - Equalização de Histogramas](Ativ5_HistEqualiz)
