@@ -5,7 +5,6 @@
         b_0; b_0 e b_1; b_0, b_1 e b_2 e assim sucessivamente.
 """
 
-
 import numpy as np
 import cv2
 
