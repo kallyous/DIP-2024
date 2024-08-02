@@ -1,3 +1,6 @@
+"""BIPS - Biblioteca Incremental Pessoal de Suporte.
+Funções pessoais de uso local que achei adequado trazer para cá por conveniência.
+"""
 
 import os
 import requests
@@ -11,12 +14,12 @@ import numpy as np
 DEBUG = False
 
 
-# Printa coisas caso DEBUG = True, usando print().
+# Escreve coisas caso DEBUG = True, usando print().
 def log(*args, **kwargs):
     """
     Imprime mensagens somente se DEBUG estiver definido como True.
-    :param args: Argumentos posicional que são passados para a função print.
-    :param kwargs: Argumentos nomeados que são passados para a função print.
+    :param args: Argumentos posicionais passados para a função print.
+    :param kwargs: Argumentos nomeados passados para a função print.
     """
     if DEBUG:
         print(*args, **kwargs)
