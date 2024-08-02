@@ -67,8 +67,8 @@ cv2.circle(gray_image, center_coordinates, radius, color, thickness)
 
 cv2.imshow('Bola em fundo cinza', gray_image)
 
-'''Somar as duas imagens com cv2.sum() ao invés de usar image + gray_image
-evita estouro de valores.'''
+# Somar as duas imagens com cv2.sum() ao invés de usar image + gray_image
+# evita estouro de valores.
 img_sum = cv2.add(image, gray_image)
 
 cv2.imshow('Soma das imagens', img_sum)

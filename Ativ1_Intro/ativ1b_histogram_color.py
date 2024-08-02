@@ -45,8 +45,8 @@ plt.title("Histograma com Matplotlib")
 plt.xlabel("Intensidade de Pixel")
 plt.ylabel("Frequência")
 
-'''Usando a imagem original, não a modificada para exibir com matplotlib,
-calcula histograma.'''
+# Usando a imagem original, não a modificada para exibir com matplotlib,
+# calcula histograma.
 for channel_id, color in zip(channel_ids, colors):
     hist = cv2.calcHist([image], [channel_id], None, [256], [0, 256])
     plt.plot(hist, color=color)

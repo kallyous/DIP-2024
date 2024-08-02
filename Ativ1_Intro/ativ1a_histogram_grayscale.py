@@ -43,8 +43,8 @@ plt.show()
 
 """ SEABORN """
 
-''' Seaborn funciona melhor com dados formatados, por isso transformamos
-a imagem em um array unidimensional.'''
+# Seaborn funciona melhor com dados formatados, por isso transformamos
+# a imagem em um array unidimensional.
 image_flatten = image.flatten()
 
 # Plotar o histograma
