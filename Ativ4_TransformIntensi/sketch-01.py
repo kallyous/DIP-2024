@@ -69,8 +69,9 @@ vctrzd_gamma_correction = np.vectorize(gamma_correction)
 
 '''Cria uma numpy ndarray com mesmas dimensões que a imagem original,
 inicializada com zeros, para armazenar os canais sendo processados por
-vectorized_gamma_correction. TODO: Ainda não entendi porque isso  é
-necessário com a função de correção gamma, mas não para a inversão.'''
+vectorized_gamma_correction.'''
+# TODO: Ainda não entendi porque isso  é necessário com a função de correção
+#  gamma, mas não para a inversão.
 img_gamma_corrected = np.zeros_like(img_src)
 
 '''Laço que aplica vectorized_gamma_correction() a cada canal de img_src e
