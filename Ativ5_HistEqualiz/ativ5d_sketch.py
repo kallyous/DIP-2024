@@ -4,9 +4,53 @@
 """
 
 import sys
+from typing import Callable
 import numpy as np
 import cv2 as cv
 from matplotlib import pyplot as plt
+
+
+# Aplica filtro em ndarray bidimensional (i.e. grayscale).
+def apply_local_mask(arr_source: np.ndarray,
+                      function: Callable[[np.ndarray], np.ndarray],
+                      kernel_height: int,
+                      kernel_width: int) -> np.ndarray:
+    """Cria uma cópia da array original modificada pela função fornecida.
+    kernel_height é a altura em píxeis da janela local.
+    kernel_width é a largura em píxeis da janela local.
+    Larguras e alturas pares são incrementadas em 1, devido ao cálculo dos
+    offsets. Isso é desejável e proposital, pois queremos um píxel no meio
+    da janela, o píxel em arr_source[y, x] para o qual estamos calculando
+    seu valor na imagem resultante.
+    """
+
+    # Inicia imagem de retorno como uma cópia da original, para manter a borda.
+    arr_result = arr_source.copy()
+
+    # Obtém as dimensões da array de origem.
+    arr_height, arr_width = arr_result.shape
+
+    # Calcula offsets do miolo do kernel.
+    y_off = kernel_height // 2
+    x_off = kernel_width // 2
+
+    # Nessa versão da função, usamos os offsets para não processar as bordas.
+    # Não é uma solução muito decente, mas serve para os fins desse trabalho.
+    for y in range(y_off, arr_height - y_off):
+        for x in range(x_off, arr_width - x_off):
+
+            # Pega elementos da janela.
+            kernel = arr_source[y-y_off:y+y_off+1,
+                                x-x_off:x+x_off+1]
+
+            # Aplica função fornecida.
+            kernel = function(kernel)
+
+            # Pega elemento central do kernel e salva na imagem modificada.
+            arr_result[y,x] = kernel[y_off, x_off]
+
+    # Retorna imagem modificada.
+    return arr_result
 
 
 # Imagem default
@@ -19,16 +63,7 @@ if len(sys.argv) > 1:
 # Carrega imagem em escala de cinza
 img_orig = cv.imread(path_img, cv.IMREAD_GRAYSCALE)
 
-# Vai receber a imagem equalizada
-img_eqlzd = img_orig.copy()
-
-# Passa por todos os píxeis não-borda e seta preto na imagem de destino.
-height, width = img_orig.shape
-for y in range(1, height-1):
-    for x in range(1, width-1):
-        kernel = img_orig[y-1:y+2, x-1:x+2]
-        kernel = cv.equalizeHist(kernel)
-        img_eqlzd[y-1:y+2, x-1:x+2] = kernel[1, 1]
+img_eqlzd = apply_local_mask(img_orig, cv.equalizeHist, 9, 9)
 
 
 """ SAÍDA """

@@ -36,11 +36,11 @@ cv2.destroyAllWindows()
 plt.figure(figsize=(10, 5))
 
 plt.subplot(1, 2, 1)
-plt.hist(img_orig.ravel(), 256, [0, 256])
+plt.hist(img_orig.ravel(), 256, (0, 256))
 plt.title('Histograma da Imagem Original')
 
 plt.subplot(1, 2, 2)
-plt.hist(img_eqlzd.ravel(), 256, [0, 256])
+plt.hist(img_eqlzd.ravel(), 256, (0, 256))
 plt.title('Histograma da Imagem Equalizada')
 
 plt.show()
