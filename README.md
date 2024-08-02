@@ -31,12 +31,12 @@ python ativ5a1_bit_slicing.py
 
 ## Atividades
 
-[Ativ 1 - Inbtrodução](Ativ1_Intro)
+[Ativ 1 - Inbtrodução](Ativ1_Intro/)
 
-[Ativ 2 - Manipulação de Arrays](Ativ2_ManipArrays)
+[Ativ 2 - Manipulação de Arrays](Ativ2_ManipArrays/)
 
-[Ativ 3 - Manipulação  de Intensidade](Ativ3_ManipIntensi)
+[Ativ 3 - Manipulação  de Intensidade](Ativ3_ManipIntensi/)
 
-[Ativ 4 - Transformação de Intensidade](Ativ4_TransformIntensi)
+[Ativ 4 - Transformação de Intensidade](Ativ4_TransformIntensi/)
 
-[Ativ 5 - Equalização de Histogramas](Ativ5_HistEqualiz)
+[Ativ 5 - Equalização de Histogramas](Ativ5_HistEqualiz/)
