@@ -48,7 +48,7 @@ download_image(url_img, path_file)
 img_orig = load_image(path_file)                        # Normal/default, colorido.
 img_gray = load_image(path_file, cv2.IMREAD_GRAYSCALE)  # Escala de cinza.
 
-# Ver a diferença nas ndarrays
+# Ver as diferenças nas ndarrays
 print('Dimensões da ndarray com a imagem original: ', img_orig.shape)
 print('Dimensões da ndarray com a imagem grayscale:', img_gray.shape)
 
