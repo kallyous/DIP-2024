@@ -1,9 +1,10 @@
 """
 3. Aplicar a correspondência de histograma (matching) na imagem
    do slide 45 (moon).
-Aconteceu que a equalização normal não resultou na iamgem de baixo contraste
+Aconteceu que a equalização normal não resultou na imagem de baixo contraste
 apresentado nos slides, essa imagem não precisa de correspondência de
 histograma.
+TODO: Atualizar com imagem que precise de histogram matching.
 """
 
 import matplotlib.pyplot as plt
