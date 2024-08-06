@@ -40,3 +40,5 @@ python ativ5a1_bit_slicing.py
 [Ativ 4 - Transformação de Intensidade](Ativ4_TransformIntensi/)
 
 [Ativ 5 - Equalização de Histogramas](Ativ5_HistEqualiz/)
+
+[Ativ 6 - Gradiente, Paraboloides e Campo gradiente](https://colab.research.google.com/drive/1Can01egAZs3b6U5mojp-0vYwXsu3m0Nx?usp=sharing)
