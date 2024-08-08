@@ -1,7 +1,6 @@
 # DIP - 2024
 
-
-### Atividades da disciplina de Processamento Digital de Imagens
+Atividades da disciplina de Processamento Digital de Imagens.
 
 Lucas Carvalho Flores  
 Ufal 2024
@@ -29,7 +28,7 @@ Ufal 2024
 ```shell
 pip install --user pipenv    # Instala o Pipenv
 pipenv install               # Instala dependências
-pipenv shell                 # Atiba ambiente virtual
+pipenv shell                 # Ativa ambiente virtual
 cd <Pasta-da-Atividade>      # Entra no diretório da atividade
 python <script-desejado>.py  # Executa script desejado
 ```
