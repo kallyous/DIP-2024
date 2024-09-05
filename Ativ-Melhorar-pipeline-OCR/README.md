@@ -1,0 +1,1 @@
+# Melhorar Pipeline de OCR
