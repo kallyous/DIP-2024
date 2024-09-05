@@ -13,6 +13,10 @@ scikit-learn = "*"
 opencv-python = "*"
 torch = "*"
 requests = "*"
+dvc = "*"
+dvc-gdrive = "*"
+scikit-image = "*"
+tqdm = "*"
 
 [dev-packages]
 
