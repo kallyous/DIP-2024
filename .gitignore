@@ -7,6 +7,8 @@ opencv4-samples-python/
 digital-image-processing-main/
 DIP3E_Original_Images_CH03/
 OCR-MLOps-DVC/
+*.code-workspace
+Processamento_Digital_de_Imagens_Bkp.tar.zst
 NOTES.md
 *.kate-swp
 *~
