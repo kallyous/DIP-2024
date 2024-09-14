@@ -22,6 +22,8 @@ Ufal 2024
 
 [Atividade - Melhorar pipeline de OCR](https://github.com/kallyous/DIP-OCR-MLOps-DVC)
 
+[Ativ 10 - Proc. de Img. coloridas](Ativ10_ProcImgColor/)
+
 
 ## Requerimentos & Instalação
 

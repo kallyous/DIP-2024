@@ -17,6 +17,8 @@ dvc = "*"
 dvc-gdrive = "*"
 scikit-image = "*"
 tqdm = "*"
+jupyter-ai = "*"
+langchain-openai = "*"
 
 [dev-packages]
 
