@@ -20,10 +20,13 @@ Ufal 2024
 
 [Ativ 6 - Gradiente, Paraboloides e Campo gradiente (Colab)](https://colab.research.google.com/drive/1Can01egAZs3b6U5mojp-0vYwXsu3m0Nx?usp=sharing)
 
-[Atividade - Melhorar pipeline de OCR](https://github.com/kallyous/DIP-OCR-MLOps-DVC)
+[Atividade OCR + DVC 1 - Executar pipeline de OCR](https://github.com/kallyous/DIP-OCR-MLOps-DVC)
 
-[Ativ 10 - Proc. de Img. coloridas](Ativ10_ProcImgColor/)
+[Atividade OCR + DVC 2- Melhorar pipeline de OCR](Ativ-Melhorar-pipeline-OCR/)
 
+[Ativ 10 - Proc. Img. Color. 1 (TODO)](Ativ10_ProcImgColor/)
+
+[Ativ 11 - Proc. Img. Color. 2 (Colab)](https://colab.research.google.com/drive/1D5naZHYpl-W_xyySW0BeeTAaIuF2Qibe)
 
 ## Requerimentos & Instalação
 
