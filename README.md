@@ -32,6 +32,8 @@ Ufal 2024
 
 [Ativ 13 - Chroma Keying (Colab)](https://colab.research.google.com/drive/1Cf1i0CtZ8GjX1QqIoar6V6YR2YpDC3Ca?usp=sharing)
 
+[Ativ 14 - HSK Disk (Colab)](https://colab.research.google.com/drive/1pcqOu0QMaJ-TBM926mD3II4Hhz7GrkE7?usp=sharing)
+
 ## Requerimentos & Instalação
 
 #### TL; DR
