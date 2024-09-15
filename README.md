@@ -26,7 +26,11 @@ Ufal 2024
 
 [Ativ 10 - Proc. Img. Color. 1 (TODO)](Ativ10_ProcImgColor/)
 
-[Ativ 11 - Proc. Img. Color. 2 (Colab)](https://colab.research.google.com/drive/1D5naZHYpl-W_xyySW0BeeTAaIuF2Qibe)
+[Ativ 11 - Proc. Img. Color. 2 (Colab)](https://colab.research.google.com/drive/165M_2_ZnfId2K8nRtWOT-eVM5tx9xvp7?usp=sharing)
+
+[Ativ 12 - Electromagnetic Spectrum (Colab)](https://colab.research.google.com/drive/1_4U9E8nTMfs_so-1gInM2TdV96XjOf_F?usp=sharing)
+
+[Ativ 13 - Chroma Keying (Colab)](https://colab.research.google.com/drive/1Cf1i0CtZ8GjX1QqIoar6V6YR2YpDC3Ca?usp=sharing)
 
 ## Requerimentos & Instalação
 
