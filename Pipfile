@@ -20,6 +20,7 @@ tqdm = "*"
 jupyter-ai = "*"
 langchain-openai = "*"
 tensorflow = "*"
+ipywidgets = "*"
 
 [dev-packages]
 
