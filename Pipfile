@@ -21,6 +21,7 @@ jupyter-ai = "*"
 langchain-openai = "*"
 tensorflow = "*"
 ipywidgets = "*"
+kaggle = "*"
 
 [dev-packages]
 
