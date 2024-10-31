@@ -230,12 +230,9 @@ def filter2D(image_set: list, kernel: np.ndarray):
 
 
 
-def dilate(image_set: list, kernel=[], iterations=1):
+def dilate(image_set: list, kernel_size=3, iterations=1):
     """Dilata imagens com kernel fornecido."""
-    if len(kernel) == 0:
-        kernel = np.array( [[ 1,  1,  1],
-                            [ 1,  1,  1],
-                            [ 1,  1,  1]])
+    kernel = np.ones((kernel_size, kernel_size))
     imset_out = []
     for img in image_set:
         imset_out.append( cv.dilate(img.astype(np.uint8), kernel=kernel, iterations=iterations) )
@@ -243,12 +240,9 @@ def dilate(image_set: list, kernel=[], iterations=1):
 
 
 
-def erode(image_set: list, kernel=[], iterations=1):
+def erode(image_set: list, kernel_size=3, iterations=1):
     """Erode imagens com kernel fornecido."""
-    if len(kernel) == 0:
-        kernel = np.array( [[ 1,  1,  1],
-                            [ 1,  1,  1],
-                            [ 1,  1,  1]])
+    kernel = np.ones((kernel_size, kernel_size))
     imset_out = []
     for img in image_set:
         imset_out.append( cv.erode(img.astype(np.uint8), kernel=kernel, iterations=iterations) )

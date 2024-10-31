@@ -86,5 +86,5 @@ class Pipeline:
                 self.data = proc.execute(self.data)
 
 
-    def plot_data(self):
-        implotmany(self.data)
+    def plot_data(self, n_cols=3):
+        implotmany(self.data, n_cols=n_cols)
