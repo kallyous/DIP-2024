@@ -1,8 +1,9 @@
 import os
 import argparse
-import cv2 as cv
 import numpy as np
 import pandas as pd
+import cv2 as cv
+import skimage as ski
 
 
 
@@ -26,19 +27,56 @@ def preprocess(input_img_path: str) -> np.ndarray:
     # Carrega imagem. Vai vir em BGR.
     img = cv.imread(input_img_path, cv.IMREAD_COLOR)
 
+    # Aplica suavização Gaussiana.
+    img = cv.GaussianBlur(img, (5, 5), 0)
+
+    # Binariza, pra fazermos detecção de contorno.
+    img_gray = img[:, :, 2]
+    threshold = ski.filters.threshold_otsu(img_gray)
+    img_bin = np.where(img_gray < threshold, 0, 255).astype(np.uint8)
+
+    # Inicializa a máscara com tudo preto.
+    img_mask = np.zeros_like(img_bin)
+
+    # Encontrar os contornos
+    contours, hierarchy = cv.findContours(img_bin, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+    # Concatenar todos os contornos encontrados em um único array de pontos.
+    all_points = np.vstack(contours)
+
+    # Casco convexo de todos os pontos de todos os contornos encontrados.
+    convex_hull = cv.convexHull(all_points)
+    cv.drawContours(img_mask, [convex_hull], -1, 255, thickness=cv.FILLED)  # Preenche casco com branco.
+
+    # Calcula caixa delimitadora
+    x, y, br_wi, br_he = cv.boundingRect(convex_hull)
+
+    # Criar ROI (Region Of Interest) aplicando a máscara na imagem original.
+    roi = cv.bitwise_and(img, img, mask=img_mask)
+
+    # Calcular a posição centralizada
+    img_width = img.shape[1]
+    img_height = img.shape[0]
+    center_x = (img_width - br_wi) // 2
+    center_y = (img_height - br_he) // 2
+
+    # Monta imagem de fundo preto com ROI da imagem original centralizado.
+    img_result = np.zeros_like(img)
+    img_result[center_y:center_y + br_he, center_x:center_x + br_wi] = roi[y:y + br_he, x:x + br_wi]
+
     # Redimensiona. Note que OpenCV usa a altura na primeira coordenada nas ndarrays.
-    src_height, src_width, src_channels = img.shape  # src_channels é a quantidade de canais, 3.
+    src_height, src_width, src_channels = img_result.shape  # src_channels é a quantidade de canais, 3.
     new_height = int(src_height / reduce_factor)
     new_width = int(src_width / reduce_factor)
 
     # Aplica redimensionamento da imagem. Note que nas chamadas de funções, a largura vem primeiro.
-    img = cv.resize(img, (new_width, new_height))
+    img_result = cv.resize(img_result, (new_width, new_height))
 
     # Converte imagem reduzida para HSV.
-    img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+    img_result = cv.cvtColor(img_result, cv.COLOR_BGR2HSV)
 
     # Retorna a imagem ajustada.
-    return img
+    return img_result
 
 
 
@@ -58,22 +96,23 @@ def process(input_img_path: str) -> (np.ndarray, np.ndarray):
 
     # DEBUG: Vamos escrever o nome da imagem original na imagem de saída, pra testar se
     #        os nomes e caminhos estão tudo certo.
-
-    file_name = os.path.basename(input_img_path)
+    file_name = os.path.basename(input_img_path).split(".")[0]
+    cable_text = f"{file_name} cable"
+    stripe_text = f"{file_name} stripe"
     font = cv.FONT_HERSHEY_SIMPLEX
     font_size = 1 / 2
-    font_color = 192
+    font_color = (255, 255, 255)
     font_thickness = 1
 
     # Calcule o tamanho do texto para centralizar na imagem.
-    (text_width, text_height), _ = cv.getTextSize(file_name, font, font_size, font_thickness)
+    (text_width, text_height), _ = cv.getTextSize(stripe_text, font, font_size, font_thickness)
     text_pos = ((img_hsv.shape[1] - text_width) // 2, (img_hsv.shape[0] + text_height) // 2)
 
     # Escreve texto na imagem do cabo.
-    cv.putText(img_gray_cable, f"{file_name}-cable", text_pos, font, font_size, font_color, font_thickness)
+    cv.putText(img_gray_cable, cable_text, text_pos, font, font_size, font_color, font_thickness)
 
     # Escreve texto na imagem da faixa.
-    cv.putText(img_gray_stripe, f"{file_name}-stripe", text_pos, font, font_size, font_color, font_thickness)
+    cv.putText(img_gray_stripe, stripe_text, text_pos, font, font_size, font_color, font_thickness)
 
     # Redimensiona img cabo para tamanho original.
     img_gray_cable = cv.resize( img_gray_cable, (orig_width, orig_heigth))
