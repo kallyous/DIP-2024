@@ -1,0 +1,296 @@
+import os
+import argparse
+import cv2 as cv
+import numpy as np
+import pandas as pd
+
+
+
+RED = "\033[31m"
+GRN = "\033[32m"
+BLU = "\033[34m"
+CLR = "\033[0m"
+
+global_input_folder = "Images"
+global_output_folder = "Output"
+reduce_factor = 4  # Vai resultar em imagens com largura 155 e altura 202.
+
+
+
+def preprocess(input_img_path: str) -> np.ndarray:
+    """Preprocessamento das imagens.
+    Recebe caminho para imagem e retorna uma np.ndarray contendo a imagem em HSV redimensionada."""
+
+    # Carrega imagem. Vai vir em BGR.
+    img = cv.imread(input_img_path, cv.IMREAD_COLOR)
+
+    # Redimensiona. Note que OpenCV usa a altura na primeira coordenada nas ndarrays.
+    src_height, src_width, src_channels = img.shape  # src_channels é a quantidade de canais, 3.
+    new_height = int(src_height / reduce_factor)
+    new_width = int(src_width / reduce_factor)
+
+    # Aplica redimensionamento da imagem. Note que nas chamadas de funções, a largura vem primeiro.
+    img = cv.resize(img, (new_width, new_height))
+
+    # Converte imagem reduzida para HSV.
+    img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+
+    # Retorna a imagem ajustada.
+    return img
+
+
+
+def process(input_img_path: str) -> np.ndarray:
+
+    # Redimensiona e passa pra HSV.
+    img_hsv = preprocess(input_img_path)
+
+    # Imagem em escala de cinza, para detecção de bordas, contornos e outras operações acromáticas.
+    img_gray = cv.cvtColor(img_hsv, cv.COLOR_HSV2BGR)
+
+    # Imagem preta de mesmas dimensões que a cinza de tamanho 1/reduce_factor .
+    img_out = np.zeros((img_gray.shape[0], img_gray.shape[1]))
+
+    # DEBUG: Vamos escrever o nome da imagem original na imagem de saída, pra testar se
+    #        os nomes e caminhos estão tudo certo.
+    file_name = os.path.basename(input_img_path)
+    font = cv.FONT_HERSHEY_SIMPLEX
+    font_size = 1 / 2
+    font_color = 192
+    font_thickness = 1
+    # Calcule o tamanho do texto para centralizar na imagem.
+    (text_width, text_height), _ = cv.getTextSize(file_name, font, font_size, font_thickness)
+    text_pos = ((img_out.shape[1] - text_width) // 2, (img_out.shape[0] + text_height) // 2)
+    # Escreve texto na imagem de saída.
+    cv.putText(img_out, file_name, text_pos, font, font_size, font_color, font_thickness)
+
+    # Retorna a imagem processada.
+    return img_out
+
+
+
+def load_data(data_file_path: str):
+    """Carrega CSV em dataframe ou encerra se arquivo não existir."""
+    try:
+        df = pd.read_csv(data_file_path)
+    except FileNotFoundError as e:
+        print(f"{RED}ERRO: {data_file_path} não encontrado!{CLR}\n")
+        exit(2)
+    return df
+
+
+
+def find_imgs_by_id(raw_id: str) -> pd.DataFrame:
+    """Recebe o id de uma amostra, tipo ID001 ou ID041, e retorna um dataframe contendo os dados de todas as imagens
+    dessa amostra, como caminho do arquivo pra carregá-lo, caminho pra salvar sua saída, etc.
+
+    Colunas do Dataframe retornado:
+      sid:      id da amostra (sample id), tipo ID001 ou ID023
+      folder:   nome da pasta da imagem, tipo ID001_1 ou ID001_2.
+      src_img:  caminho para o arquivo fonte da imagem original.
+      out_ref:  caminho definido para a saída pertinente à essa imagem, adicione sufixo em cima dessa string e salve.
+    """
+
+    # De onde carregar entrada?
+    cwd = os.getcwd()
+    id = raw_id.lower().strip().lstrip("id")
+    id = f"ID{id}"
+    id_folders = (f"{id}_1", f"{id}_2")
+
+    # Prepara colunas do dataframe.
+    cols = ["sid", "folder", "src_img", "out_ref"]
+    df_out = pd.DataFrame(columns=cols)
+
+    # Laço principal. Encontra cada imagen, carrega, processa e pareia com caminho de sua saída.
+    for idf in id_folders:
+
+        # Pastas de entrada e saída pra instância atual.
+        input_folder = os.path.join(cwd, global_input_folder, idf)
+        output_folder = os.path.join(cwd, global_output_folder, idf)
+
+        # Para caso a pasta de saída ainda não exista.
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+
+        # Se a pasta por algum motivo não existir, apenas pule essa pasta.
+        if not os.path.exists(input_folder):
+            continue
+
+        # lisca com os nomes dos arquivos dessa instância.
+        filenames = [file_name for file_name in os.listdir(input_folder)
+                     if os.path.isfile(os.path.join(input_folder, file_name))]
+
+        # Opera cada imagem.
+        for img_name in filenames:
+            # Nome do arquivo de entrada e do arquivo de saída.
+            input_img_path = os.path.join(input_folder, img_name)
+            output_img_path = os.path.join(output_folder, img_name)
+
+            # Adiciona resultado ao dataframe em construção.
+            df_out.loc[len(df_out)] = [id, idf, input_img_path, output_img_path]
+
+    # Retorna dataframe contendo os caminhos para todas as imagens
+    return df_out
+
+
+
+def main_DL(registration_number, input_filename):
+    """
+    Main function to calculate the result based on input parameters.
+
+    Args:
+        registration_number (str): Student's registration number.
+        input_filename (str): Absolute input file name as; <PATH + IMAGEFILE + EXTENSION> eg. 'C://User//Student//image.png' OR 'C://User//Student//image.jpg'.
+                              Absolute input file name as; <PATH +  DATASET  + EXTENSION> eg. 'C://User//Student//dataset.csv' OR 'C://User//Student//dataset.npy'
+    """
+
+    print("\nDEEP LEARNING - Proj. 2\n")
+
+    # Base de treino
+    df_train = load_data("train.csv")
+
+    # Laço nas amostras da base do CSV.
+    for sample_row_index, sample_row in df_train.iterrows():
+
+        # Pega o ID da amostra.
+        id = sample_row["ID"]
+
+        # Carrega dados das imagens nas pastas dessa amostra/Id/linha, teoricamente 8,
+        # sendo 4 de IDxxx_1 e mais 4 de IDxxx_2.
+        df_img_data = find_imgs_by_id(id)
+
+        # Laço nos dados de cada uma das 8 imagens da amostra atual.
+        for img_row_index, img_row in df_img_data.iterrows():
+
+            try:
+                # Carrega, redimensiona e converte a imagem para HSV.
+                img_hsv = preprocess(img_row["src_img"])
+            except FileNotFoundError:
+                print(f"{RED}ERRO: {img_row['src_img']} não existe{CLR}")
+                print("ignorando...")
+                continue
+
+            # Aqui viria a concatenação ou sei lá o que das 8 imagens para cada fio/ID, e colocar esse vetor em
+            # uma lsita de vetores pra usar no treino do moedelo.
+
+            # DEBUG: Salva a imagem (não vai fazer isso de verdade na prática, é só pra ver o resultado).
+            out_hsv = img_row["out_ref"] + "_hsv.png"
+            cv.imwrite(out_hsv, img_hsv)
+
+            # DEBUG: Só pra fins de curiosidade, comparar com a imagem RGB.
+            img_bgr = cv.cvtColor(img_hsv, cv.COLOR_HSV2BGR)
+            out_rgb = img_row["out_ref"] + "_rgb.png"
+            cv.imwrite(out_rgb, img_bgr)
+
+    # Aqui devemos ter no dataframe ou em uma lista, o que for mais conveniente, os vetores com os pixels das 8 imagens
+    # preprocessadas para a rede treinar e seus respectivos rótulos em cor e espessura da faixa (conforme/n]ao-conforme).
+    # Assim sendo, montar e compilar o modelo aqui.
+    #
+    # 1. Montar modelo.
+    # 2. Compilar modelo.
+    # 3. Treinar modelo com dados preprocessados.
+    #
+
+    # Feito isso, usar input_filename para localizar e carregar o dataframe com os dados das imagens de validação.
+    # Carregar as iamgens da mesma forma que foi para o treino, preprocessando e (se for o caso) concatenando os vetores
+    # das imagens ou sei lá o que vc escolher fazer pra o vetor de atriobutos. O importante é que as imagens carregadas
+    # devem ser preprocessadas da mesma forma. Depois disso faz as previsões e põe num dataframe contendo as
+    # colunas [ "ID", "Cor Conforme", "Listra Conforme"].
+    #
+    # 1. Carregar base de validação fornecida em input_filename com preprocess(), igual ao treino.
+    df_validation = load_data(input_filename)  # Carregar imagens com find_imgs_by_id(id) e preprocessá-las
+    #                                            com preprocess(img_row["src_img"])
+    # 2. Preparar dataframe pra receber os resultados.
+    df_results = pd.DataFrame(columns=["ID", "Cor Conforme", "Listra Conforme"])
+    # 3. Para cada imagem de validação:
+    #     3.1. Usar modelo treinado para classificar conformidade de cor
+    #     3.2. Usar modelo treinado para classificar conformidade da faixa
+    # 4. Adicionar resultados dessa instância/imagem no dataframe de resultados.
+    df_results.loc[len(df_results)] = ["ID069", 1, 0]
+    # 5. Após processar todas as instâncias de validação, imprimir acurácia e recall.
+
+    # Retornar o dataframee de resultados nas colunas [ "ID", "Cor Conforme", "Listra Conforme"].
+    # Quando isso voltar para 'if __name__ == "__main__":' vai ser salvo como um CSV para o prof avaliar os resultados.
+    #
+    # 1. Retornar dataframe de resultados aqui.
+    return df_results
+    # Cabou.
+
+
+
+def main_DIP(registration_number, input_filename):
+    """
+    Main function to calculate the result based on input parameters.
+
+    Args:
+        registration_number (str): Student's registration number.
+        input_filename (str): Absolute input file name as; <PATH + IMAGEFILE + EXTENSION> eg. 'C://User//Student//image.png' OR 'C://User//Student//image.jpg'.
+                              Absolute input file name as; <PATH +  DATASET  + EXTENSION> eg. 'C://User//Student//dataset.csv' OR 'C://User//Student//dataset.npy'
+    """
+
+    print("\nDIGITAL IMAGE PROCESSING - Proj. 2\n")
+
+    # Carrega caminhos de entrada e saída pra cada arquivo do ID solicitado.
+    df_paths = find_imgs_by_id(input_filename)
+
+    # Lista de pares (caminho_saída, valor_saída)
+    output_paths_and_values = []
+
+    # Opera todas as imagens encontradas.
+    for index, row in df_paths.iterrows():
+
+        # Efetua processamento.
+        prep_img = process(row["src_img"])
+
+        # Nome do arquivo de saída.
+        out_dir = row["out_ref"] + ".png"
+
+        # Associa resultado do processamento com caminho de saída.
+        output_paths_and_values.append((out_dir, prep_img))
+
+    # Retorna lista de pares (caminho_saída, valor_saída)
+    return output_paths_and_values
+
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Project 2 - Lucas Carvalho")
+    
+    # Add arguments
+    parser.add_argument('--registration_number', type=str, required=True, help="Student's registration number")
+    parser.add_argument('--input_filename', type=str, required=True, help="Absolute input file name")
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Cria pasta de saída, se não existir.
+    if not os.path.exists(global_output_folder):
+        os.makedirs(global_output_folder)
+
+
+    # Rotina de DL.
+    if args.input_filename.endswith(".csv"):
+
+        # Call the main function with parsed arguments
+        df_results = main_DL(args.registration_number, args.input_filename)
+
+        # Write the result to file
+        output_file_path = os.path.join(global_output_folder, "results.csv")
+        # with open(output_file_path, "w") as out_file:
+        #     out_file.write(output_value)
+        df_results.to_csv(output_file_path, index=False)
+
+
+    # Rotina de PID.
+    else:
+
+        # Call the main function with parsed arguments
+        output_paths_and_values = main_DIP(args.registration_number, args.input_filename)
+
+        # Write the result to file
+        for out_path, out_value in output_paths_and_values:
+            cv.imwrite(out_path, out_value)
+
+
+    print(f"{GRN}Concluido.\n{CLR}")

@@ -1,0 +1,23 @@
+﻿ID,Cor,Cor lista,Diametro,Espessura L1,Espessura L2,Comprimento do perimetro,L1 %,L2 %,Cor Conforme,Listra Conforme
+ID019,Violeta,Amarelo,2.186,0.92,0.92,6.86751574,13.39640177,13.39640177,Conforme,Conforme
+ID020,Marrom,Vermelho,1.902,0.745,0.677,5.97530418,12.46798452,11.32996714,Conforme,Conforme
+ID021,Violeta,Preto,2.138,0.874,1.013,6.71671942,13.01230475,15.0817674,Conforme,Conforme
+ID022,Marrom,Amarelo,1.953,0.706,0.673,6.13552527,11.50675727,10.96890601,Conforme,Conforme
+ID023,Cinza,Azul escuro,1.24,0.452,0.554,3.8955716,11.60291856,14.22127628,Conforme,Conforme
+ID024,Verde escuro,Preto,1.415,0.676,0.645,4.44534985,15.20690211,14.50954417,Conforme,Conforme
+ID025,Branco,Vermelho,1.963,0.966,1.229,6.16694117,15.66416759,19.92884262,Conforme,Não conforme
+ID026,Marrom,Azul escuro,2.13,0.919,0.916,6.6915867,13.7336635,13.68883108,Conforme,Conforme
+ID027,Cinza,-,2.072,-,-,6.50937448,-,-,Conforme,-
+ID028,Verde claro,-,2.66,-,-,8.3566294,-,-,Conforme,-
+ID029,Violeta,Preto,2.06,0.95,0.81,6.4716754,14.67935181,12.51607891,Conforme,Conforme
+ID030,Branco,-,2.93,-,-,9.2048587,-,-,Conforme,-
+ID031,Laranja,-,1.33,-,-,4.1783147,-,-,Conforme,-
+ID032,Preto,Branco,1.55,0.79,0.62,4.8694645,16.22354984,12.7324062,Conforme,Conforme
+ID033,Azul escuro,-,1.31,-,-,4.1154829,-,-,Conforme,-
+ID034,Branco,Amarelo,1.97,1.09,0.62,6.1889323,17.61208472,10.01788305,Conforme,Não conforme
+ID035,Violeta,Amarelo,2.08,0.95,0.83,6.5345072,14.5382042,12.70179946,Conforme,Conforme
+ID036,Amarelo,Verde escuro,1.61,0.89,0.71,5.0579599,17.5960272,14.03728013,Não conforme,Não conforme
+ID037,Vermelho,Azul escuro,1.52,0.71,0.62,4.7752168,14.86843487,12.98370369,Conforme,Conforme
+ID038,Vermelho,Preto,1.27,0.6,0.74,3.9898193,15.03827504,18.54720588,Conforme,Não conforme
+ID039,Violeta,Vermelho,2.05,0.88,0.69,6.4402595,13.66404568,10.713854,Conforme,Conforme
+ID040,Azul claro,-,1.39,-,-,4.3668101,-,-,Conforme,-
