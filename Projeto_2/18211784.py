@@ -85,45 +85,31 @@ def process(input_img_path: str) -> (np.ndarray, np.ndarray):
     # Redimensiona e passa pra HSV.
     img_hsv = preprocess(input_img_path)
 
-    # Imagem preta de mesmas dimensões que a cinza de tamanho 1/reduce_factor .
-    # img_out = np.zeros((img_gray.shape[0], img_gray.shape[1]))
-
     # Imagem em escala de cinza, para detecção de bordas, contornos e outras operações acromáticas.
-    img_gray_cable = cv.cvtColor(img_hsv, cv.COLOR_HSV2BGR)
+    img_gray = img_hsv[:, :, 2]
 
-    # Imagem em escala de cinza, para detecção de bordas, contornos e outras operações acromáticas.
-    img_gray_stripe = cv.cvtColor(img_hsv, cv.COLOR_HSV2BGR)
+    # Kernel para as operações morfológicas adiante.
+    kernel = np.ones((5, 5))
 
-    # DEBUG: Vamos escrever o nome da imagem original na imagem de saída, pra testar se
-    #        os nomes e caminhos estão tudo certo.
-    file_name = os.path.basename(input_img_path).split(".")[0]
-    cable_text = f"{file_name} cable"
-    stripe_text = f"{file_name} stripe"
-    font = cv.FONT_HERSHEY_SIMPLEX
-    font_size = 1 / 2
-    font_color = (255, 255, 255)
-    font_thickness = 1
+    t = 32
+    cable_init = np.where(img_gray < t, 0, 255).astype(np.uint8)
+    cable = cv.morphologyEx(cable_init, cv.MORPH_OPEN, kernel, 1)
 
-    # Calcule o tamanho do texto para centralizar na imagem.
-    (text_width, text_height), _ = cv.getTextSize(stripe_text, font, font_size, font_thickness)
-    text_pos = ((img_hsv.shape[1] - text_width) // 2, (img_hsv.shape[0] + text_height) // 2)
-
-    # Escreve texto na imagem do cabo.
-    cv.putText(img_gray_cable, cable_text, text_pos, font, font_size, font_color, font_thickness)
-
-    # Escreve texto na imagem da faixa.
-    cv.putText(img_gray_stripe, stripe_text, text_pos, font, font_size, font_color, font_thickness)
+    t = 255 - 32
+    stripe_init = np.where(img_gray < t, 0, 255).astype(np.uint8)
+    stripe_xor = cv.bitwise_xor(cable, stripe_init)
+    stripe = cv.morphologyEx(stripe_xor, cv.MORPH_OPEN, kernel, 1)
 
     # Redimensiona img cabo para tamanho original.
-    img_gray_cable = cv.resize( img_gray_cable, (orig_width, orig_heigth))
+    cable = cv.resize( cable, (orig_width, orig_heigth))
 
     # Redimensiona img cabo para tamanho original.
-    img_gray_stripe = cv.resize(img_gray_stripe, (orig_width, orig_heigth))
+    stripe = cv.resize(stripe, (orig_width, orig_heigth))
 
     # Retorna a imagem processada.
     # DEBUG: Estamos restaurando o tamanho e sistema de cores originais pra visualizar o resultado
     #        do pré-processamento.
-    return img_gray_cable, img_gray_stripe
+    return cable, stripe
 
 
 
