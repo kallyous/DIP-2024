@@ -14,6 +14,8 @@ CLR = "\033[0m"
 global_input_folder = "Images"
 global_output_folder = "Output"
 reduce_factor = 4  # Vai resultar em imagens com largura 155 e altura 202.
+orig_heigth = 808
+orig_width = 620
 
 
 
@@ -40,32 +42,49 @@ def preprocess(input_img_path: str) -> np.ndarray:
 
 
 
-def process(input_img_path: str) -> np.ndarray:
+def process(input_img_path: str) -> (np.ndarray, np.ndarray):
 
     # Redimensiona e passa pra HSV.
     img_hsv = preprocess(input_img_path)
 
-    # Imagem em escala de cinza, para detecção de bordas, contornos e outras operações acromáticas.
-    img_gray = cv.cvtColor(img_hsv, cv.COLOR_HSV2BGR)
-
     # Imagem preta de mesmas dimensões que a cinza de tamanho 1/reduce_factor .
-    img_out = np.zeros((img_gray.shape[0], img_gray.shape[1]))
+    # img_out = np.zeros((img_gray.shape[0], img_gray.shape[1]))
+
+    # Imagem em escala de cinza, para detecção de bordas, contornos e outras operações acromáticas.
+    img_gray_cable = cv.cvtColor(img_hsv, cv.COLOR_HSV2BGR)
+
+    # Imagem em escala de cinza, para detecção de bordas, contornos e outras operações acromáticas.
+    img_gray_stripe = cv.cvtColor(img_hsv, cv.COLOR_HSV2BGR)
 
     # DEBUG: Vamos escrever o nome da imagem original na imagem de saída, pra testar se
     #        os nomes e caminhos estão tudo certo.
+
     file_name = os.path.basename(input_img_path)
     font = cv.FONT_HERSHEY_SIMPLEX
     font_size = 1 / 2
     font_color = 192
     font_thickness = 1
+
     # Calcule o tamanho do texto para centralizar na imagem.
     (text_width, text_height), _ = cv.getTextSize(file_name, font, font_size, font_thickness)
-    text_pos = ((img_out.shape[1] - text_width) // 2, (img_out.shape[0] + text_height) // 2)
-    # Escreve texto na imagem de saída.
-    cv.putText(img_out, file_name, text_pos, font, font_size, font_color, font_thickness)
+    text_pos = ((img_hsv.shape[1] - text_width) // 2, (img_hsv.shape[0] + text_height) // 2)
+
+    # Escreve texto na imagem do cabo.
+    cv.putText(img_gray_cable, f"{file_name}-cable", text_pos, font, font_size, font_color, font_thickness)
+
+    # Escreve texto na imagem da faixa.
+    cv.putText(img_gray_stripe, f"{file_name}-stripe", text_pos, font, font_size, font_color, font_thickness)
+
+    # Redimensiona img cabo para tamanho original.
+    img_gray_cable = cv.resize( img_gray_cable, (orig_width, orig_heigth))
+
+    # Redimensiona img cabo para tamanho original.
+    img_gray_stripe = cv.resize(img_gray_stripe, (orig_width, orig_heigth))
 
     # Retorna a imagem processada.
-    return img_out
+    # DEBUG: Estamos restaurando o tamanho e sistema de cores originais pra visualizar o resultado
+    #        do pré-processamento.
+    return img_gray_cable, img_gray_stripe
 
 
 
@@ -122,12 +141,13 @@ def find_imgs_by_id(raw_id: str) -> pd.DataFrame:
 
         # Opera cada imagem.
         for img_name in filenames:
+
             # Nome do arquivo de entrada e do arquivo de saída.
             input_img_path = os.path.join(input_folder, img_name)
-            output_img_path = os.path.join(output_folder, img_name)
+            output_img_ref = os.path.join(output_folder, img_name.split(".")[0])
 
             # Adiciona resultado ao dataframe em construção.
-            df_out.loc[len(df_out)] = [id, idf, input_img_path, output_img_path]
+            df_out.loc[len(df_out)] = [id, idf, input_img_path, output_img_ref]
 
     # Retorna dataframe contendo os caminhos para todas as imagens
     return df_out
@@ -239,16 +259,23 @@ def main_DIP(registration_number, input_filename):
     # Opera todas as imagens encontradas.
     for index, row in df_paths.iterrows():
 
-        # Efetua processamento.
-        prep_img = process(row["src_img"])
+        # Obtém máscaras binárias do cabo e do contorno do cabo.
+        img_mask_cable, img_mask_stripe = process(row["src_img"])
 
-        # Nome do arquivo de saída.
-        out_dir = row["out_ref"] + ".png"
+        # Nome do arquivo de saída do cabo.
+        cable_out_dir = f"{row['out_ref']}_cable.png"
 
-        # Associa resultado do processamento com caminho de saída.
-        output_paths_and_values.append((out_dir, prep_img))
+        # Nome do arquivo de saída do cabo.
+        stripe_out_dir = f"{row['out_ref']}_stripe.png"
 
-    # Retorna lista de pares (caminho_saída, valor_saída)
+        # Organiza dados numa lista de dicts.
+        row_output = [ {"out_dir": cable_out_dir,  "data": img_mask_cable},
+                       {"out_dir": stripe_out_dir, "data": img_mask_stripe} ]
+
+        # Adiciona resultado do processamento na lista a retornar.
+        output_paths_and_values.append(row_output)
+
+    # Retorna lista de resultados.
     return output_paths_and_values
 
 
@@ -289,8 +316,9 @@ if __name__ == "__main__":
         output_paths_and_values = main_DIP(args.registration_number, args.input_filename)
 
         # Write the result to file
-        for out_path, out_value in output_paths_and_values:
-            cv.imwrite(out_path, out_value)
+        for cable, stripe in output_paths_and_values:
+            cv.imwrite(cable["out_dir"], cable["data"])
+            cv.imwrite(stripe["out_dir"], stripe["data"])
 
 
     print(f"{GRN}Concluido.\n{CLR}")
