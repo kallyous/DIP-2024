@@ -346,4 +346,4 @@ if __name__ == "__main__":
             cv.imwrite(stripe["out_dir"], stripe["data"])
 
 
-    print(f"{GRN}Concluido.\n{CLR}")
+    print(f"{GRN}Concluido {args.input_filename}\n{CLR}")
