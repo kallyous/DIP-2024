@@ -18,7 +18,7 @@ BLU = "\033[34m"
 CLR = "\033[0m"
 
 global_input_folder = "Images"
-global_output_folder = "Output"
+global_output_folder = "Masks"
 reduce_factor = 4  # Vai resultar em imagens com largura 155 e altura 202.
 orig_heigth = 808
 orig_width = 620
