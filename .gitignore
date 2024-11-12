@@ -1,6 +1,7 @@
 .obsidian/
 .idea/
 .obsidian/
+*.ipynb_checkpoints/
 PDFs/
 Em Aula/
 opencv4-samples-python/
