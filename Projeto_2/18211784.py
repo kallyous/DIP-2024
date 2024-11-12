@@ -243,10 +243,6 @@ def preprocess(input_img_path: str) -> np.ndarray:
         # Encontra componentes conexas.
         num_labels, labels, stats, centroids = cv.connectedComponentsWithStats(Hqi, connectivity=4)
 
-        # TODO: Ao invés de ficar com a maior componente, ficar com as duas maiores caso a diferença de tamanho entre
-        #       elas seja menor que 50% do tamanho da maior compoenente.
-        # Isso servirá para quando o fio é dividido em duas regiões pela listra.
-
         # Ordena lista de componentes conexas em decrescente pela área.
         enumerated_stats = enumerate(stats[1:]) # Descartamos o índice 0, pois descreve o fundo.
         enumerated_stats = list(enumerated_stats)
@@ -256,35 +252,37 @@ def preprocess(input_img_path: str) -> np.ndarray:
         try:
             # A maior componente estará no começo da lista ordenada. Contudo,o índice está com offset para esquerda
             # por descartarmos o fundo, daí o +1.
-            largest_label = enumerated_stats[0][0] + 1
+            big_1st = enumerated_stats[0][0] + 1
 
         # Nessa versão, a lista estará vazia se não houver ao menos uma componente conxea para a cor atual.
         except IndexError:
             continue
 
-        # # Encontrar maior componente conexa na img bin.
-        # try:
-        #     # Pulo do Gato: stats contém as estatísticas das componentes conexas. A coluna 4 de stats (stats[:, 4])
-        #     # contém a área de cada componente conexa. Assim podemos encontrar o índice da maior área (ignorando
-        #     # o índice 0, que é o fundo) com:
-        #     largest_label = 1 + np.argmax(stats[1:, 4])  # O +1 é pq np.argmax() vai retornar o índice no contexto de
-        #                                                  # [1:, 4], então o índice retornado vai estar deslocado
-        #                                                  # em 1 para esquerda.
-        # # Se não tiver componente conexa (i.e. tiver tudo preto), np.argmax() levanta essa exceção.
-        # except ValueError:
-        #     continue
+        # As vezes o cabo está divido pela listra, em lado esquerdo e direito. Quando isso ocorre, temos duas
+        # componentes conexas grandes. Vamos tenar pegar a segunda maior para análise.
+        try:
+            big_2nd = enumerated_stats[1][0] + 1
+
+        # Nesse caso vamos usar -1 pra indicar que só tinha uma componente conexa.
+        except IndexError:
+            big_2nd = -1
 
         # Criar uma imagem de saída com a mesma forma, mas apenas a maior componente conexa
         Hqi = np.zeros_like(Hqi, dtype=np.uint8)
 
         # Em Hqi, vai definir para 255 o pixel tal que em label esse pixel é igual ao label da maior componente conexa.
-        Hqi[labels == largest_label] = 255
+        # Esse caso sempre ocorre, então apenas fazemos direto.
+        Hqi[labels == big_1st] = 255
+
+        # Para os casos onde há uma segunda região conexa grande (teoricamente):
+        if big_2nd > -1:
+            Hqi[labels == big_2nd] = 255
 
         # Organiza dados sobre matiz atual.
         data = {
             'name': color['name'],
             'img': Hqi,
-            'size': stats[largest_label][4]
+            'size': stats[big_1st][4]
         }
 
         # Adiciona à lista de maior componente conexa de cada matiz.
