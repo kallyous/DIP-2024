@@ -7,6 +7,15 @@ import skimage as ski
 import matplotlib.pyplot as plt
 from matplotlib.colors import hsv_to_rgb
 
+# Suprime toneladas de lensagens de log do estado interno do TesnorFlow que são innúteis para nosso contexto.
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tensorflow as tf
+
+import keras
+from keras import layers, models, Model
+from keras.layers import Dense, Flatten, Input, Embedding, Concatenate, Resizing
+from keras.applications import MobileNetV2
+from keras.utils import to_categorical
 
 
 # Configurar o estilo de fundo escuro
@@ -22,6 +31,7 @@ global_output_folder = "Masks"
 reduce_factor = 4  # Vai resultar em imagens com largura 155 e altura 202.
 orig_heigth = 808
 orig_width = 620
+target_side_length = 128
 hue_offset = 76
 
 # Dict de mapeamento de intervalos de matiz.
@@ -67,6 +77,8 @@ huemap = [
 # Corte do vermelho.
 redmod = 166
 
+
+
 def quantize_pixel(value: np.uint8) -> np.uint8:
     """Recebe o valor em [0, 180) presentando matiz, e o mapeira para cor primária mais próxima."""
 
@@ -78,6 +90,7 @@ def quantize_pixel(value: np.uint8) -> np.uint8:
 
 # Cria versão vetorizada da função, pra aplicar em imagem inteira.
 quantize = np.vectorize(quantize_pixel)
+
 
 
 def show(data: dict):
@@ -297,16 +310,16 @@ def preprocess(input_img_path: str) -> np.ndarray:
     # cv.imshow(f"{n} Raw", m)
     m = cv.morphologyEx(m, op=cv.MORPH_OPEN, kernel=kernel, iterations=5)
     m = cv.morphologyEx(m, op=cv.MORPH_CLOSE, kernel=kernel, iterations=20)
-    m = cv.dilate(m, kernel=kernel, iterations=2)
+    # m = cv.dilate(m, kernel=kernel, iterations=2)
     Hq[0]['img'] = m
 
-    # Morfologia básica para refinar resultado do cabo (segunda maior região).
+    # Morfologia básica para refinar resultado da listra (segunda maior região).
     m = Hq[1]['img']
     n = Hq[1]['name']
     # cv.imshow(f"{n} Raw", m)
     m = cv.morphologyEx(m, op=cv.MORPH_OPEN, kernel=kernel, iterations=1)
     m = cv.morphologyEx(m, op=cv.MORPH_CLOSE, kernel=kernel, iterations=5)
-    m = cv.dilate(m, kernel=kernel, iterations=1)
+    # m = cv.dilate(m, kernel=kernel, iterations=1)
     Hq[1]['img'] = m
 
     # Adiciona camada de tons pra ver a imagem.
@@ -368,6 +381,24 @@ def load_data(data_file_path: str):
 
 
 
+def load_data_dl(data_file_path: str):
+    """Carrega CSV em dataframe ou encerra se arquivo não existir."""
+    try:
+        df_raw = pd.read_csv(data_file_path)
+    except FileNotFoundError as e:
+        print(f"{RED}ERRO: {data_file_path} não encontrado!{CLR}\n")
+        exit(2)
+
+    df = pd.DataFrame(columns=df_raw.columns)
+
+    for index, row in df_raw.iterrows():
+        if row["L1 %"] != '-' and row["L2 %"] != '-' and row["Listra Conforme"] != '-':
+            df.loc[len(df)] = row
+
+    return df
+
+
+
 def find_imgs_by_id(raw_id: str) -> pd.DataFrame:
     """Recebe o id de uma amostra, tipo ID001 ou ID041, e retorna um dataframe contendo os dados de todas as imagens
     dessa amostra, como caminho do arquivo pra carregá-lo, caminho pra salvar sua saída, etc.
@@ -423,6 +454,101 @@ def find_imgs_by_id(raw_id: str) -> pd.DataFrame:
 
 
 
+def encode_labels_database(df):
+    '''
+    Recebe a base de dados num dataframe e retorna um dataframe com os valores categóricos codificados.
+    '''
+
+    encoded_df = df.copy()
+
+    encoded_df['Cor Conforme'] = df['Cor Conforme'].replace(['Conforme', 'Não conforme'], [0, 1])
+    encoded_df['Listra Conforme'] = df['Listra Conforme'].replace(['Conforme', 'Não conforme'], [0, 1])
+
+    return encoded_df
+
+
+
+def decode_labels_dataframe(df):
+    '''
+    Recebe a base de dados num dataframe e retorna um dataframe com os valores categóricos decodificados
+    para exportação.
+    '''
+
+    decoded_df = df.copy()
+
+    decoded_df['Cor Conforme'] = df['Cor Conforme'].replace([0, 1], ['Conforme', 'Não conforme'])
+    decoded_df['Listra Conforme'] = df['Listra Conforme'].replace([0, 1], ['Conforme', 'Não conforme'])
+
+    return decoded_df
+
+
+def get_data_color_from_df(df):
+    id_set = []
+    imgs_set = []
+    labels_set = []
+
+    for index, row in df.iterrows():
+
+        id = row["ID"]
+        color_name = row["Cor"]
+        color_label = row["Cor Conforme"]
+
+        # carrega dados das imagens nas pastas dessa amostra/Id/linha, teoricamente 8,
+        # sendo 4 de IDxxx_1 e mais 4 de IDxxx_2.
+        df_img_data = find_imgs_by_id(id)
+
+        # Laço nos dados de cada uma das 8 imagens da amostra atual.
+        for img_index, img_row in df_img_data.iterrows():
+
+            try:
+                # Carrega, redimensiona e converte a imagem para HSV.
+                img_hsv, regions_0, regions_1 = process(img_row["src_img"])
+
+            except FileNotFoundError:
+                print(f"{RED}ERRO: {img_row['src_img']} não existe{CLR}")
+                print("ignorando...")
+                continue
+
+            id_set.append(id)
+            imgs_set.append(img_hsv)
+            labels_set.append(color_label)
+
+    np_imgs = np.array(imgs_set).astype('float32')
+    np_labels_cor = np.array(labels_set).astype('float32')
+
+    return id_set, np_imgs, np_labels_cor
+
+
+def get_data_listra_from_df(df) -> (np.ndarray, np.ndarray, np.ndarray):
+    id_set = []
+    data_listras_L1 = []
+    data_listras_L2 = []
+    labels_listras = []
+
+    for sample_row_index, sample_row in df.iterrows():
+
+        id = sample_row["ID"]
+        listra_train_label = sample_row["Listra Conforme"]
+        data_l1 = sample_row["L1 %"]
+        data_l2 = sample_row["L2 %"]
+
+        df_img_data = find_imgs_by_id(id)
+
+        # Laço nos dados de cada uma das 8 imagens da amostra atual.
+        for img_row_index, img_row in df_img_data.iterrows():
+            id_set.append(id)
+            data_listras_L1.append(data_l1)
+            data_listras_L2.append(data_l2)
+            labels_listras.append(listra_train_label)
+
+    np_l1 = np.array(data_listras_L1).astype('float32')
+    np_l2 = np.array(data_listras_L2).astype('float32')
+    np_listras_labels = np.array(labels_listras).astype('float32')
+
+    return id_set, np_l1, np_l2, np_listras_labels
+
+
+
 def main_DL(registration_number, input_filename):
     """
     Main function to calculate the result based on input parameters.
@@ -436,15 +562,29 @@ def main_DL(registration_number, input_filename):
     print("\nDEEP LEARNING - Proj. 2\n")
 
     # Base de treino
-    df_train = load_data("train.csv")
+    df_train = load_data_dl("train.csv")
+
+    # Ajuste nas labels
+    df_train = encode_labels_database(df_train)
+
+    data_imgs = []
+    data_listras_L1 = []
+    data_listras_L2 = []
+    labels_cor = []
+    labels_listra = []
 
     # Laço nas amostras da base do CSV.
     for sample_row_index, sample_row in df_train.iterrows():
 
         # Pega o ID da amostra.
         id = sample_row["ID"]
+        nome_cor_train = sample_row["Cor"]
+        cor_train_label = sample_row["Cor Conforme"]
+        listra_train_label = sample_row["Listra Conforme"]
+        data_l1 = sample_row["L1 %"]
+        data_l2 = sample_row["L2 %"]
 
-        # Carrega dados das imagens nas pastas dessa amostra/Id/linha, teoricamente 8,
+        # carrega dados das imagens nas pastas dessa amostra/Id/linha, teoricamente 8,
         # sendo 4 de IDxxx_1 e mais 4 de IDxxx_2.
         df_img_data = find_imgs_by_id(id)
 
@@ -453,23 +593,70 @@ def main_DL(registration_number, input_filename):
 
             try:
                 # Carrega, redimensiona e converte a imagem para HSV.
-                img_hsv = preprocess(img_row["src_img"])
+                img_hsv, regions_0, regions_1 = process(img_row["src_img"])
+
             except FileNotFoundError:
                 print(f"{RED}ERRO: {img_row['src_img']} não existe{CLR}")
                 print("ignorando...")
                 continue
 
-            # Aqui viria a concatenação ou sei lá o que das 8 imagens para cada fio/ID, e colocar esse vetor em
-            # uma lsita de vetores pra usar no treino do moedelo.
+            data_imgs.append(img_hsv)
+            data_listras_L1.append(data_l1)
+            data_listras_L2.append(data_l2)
+            labels_cor.append(cor_train_label)
+            labels_listra.append(listra_train_label)
 
-            # DEBUG: Salva a imagem (não vai fazer isso de verdade na prática, é só pra ver o resultado).
-            out_hsv = img_row["out_ref"] + "_hsv.png"
-            cv.imwrite(out_hsv, img_hsv)
+    # Ajsutes de tipos de dados para o modelo usar.
+    np_imgs = np.array(data_imgs).astype('float32')
+    np_l1 = np.array(data_listras_L1).astype('float32')
+    np_l2 = np.array(data_listras_L2).astype('float32')
+    np_labels_cor = np.array(labels_cor).astype('float32')
+    np_labels_listra = np.array(labels_listra).astype('float32')
 
-            # DEBUG: Só pra fins de curiosidade, comparar com a imagem RGB.
-            img_bgr = cv.cvtColor(img_hsv, cv.COLOR_HSV2BGR)
-            out_rgb = img_row["out_ref"] + "_rgb.png"
-            cv.imwrite(out_rgb, img_bgr)
+
+    ### Arquitetura da RN para cores dos cabos. ###
+
+    input_shape = (orig_heigth, orig_width, 3)
+    resize_shape = (target_side_length, target_side_length)
+
+    inputs = Input(shape=input_shape)
+    x = Resizing(*resize_shape)(inputs)
+    x = keras.applications.mobilenet_v2.preprocess_input(x)
+
+    # Transfer Learning com MobileNetV2 (congele pesos base inicialmente)
+    base_model = MobileNetV2(input_shape=(*resize_shape, 3), include_top=False, weights='imagenet')
+    base_model.trainable = False  # Congelamos a base inicialmente
+    x = base_model(x)
+    x = layers.GlobalAveragePooling2D()(x)
+
+    x = layers.Dense(128, activation='relu')(x)
+    x = layers.Dropout(0.5)(x)
+    output_color = layers.Dense(1, activation='sigmoid')(x)
+
+    color_model = keras.Model(inputs=inputs, outputs=output_color, name='color_model')
+    color_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy', 'recall'])
+    color_model.summary()
+
+    # Treino do modelo de cores.
+    color_model.fit(np_imgs, np_labels_cor)
+
+
+    ### Arquitetura da RN para as espessuras das listras. ###
+
+    inputL1 = Input(shape=(1,))
+    inputL2 = Input(shape=(1,))
+
+    merge_input = Concatenate(axis=1)([inputL1, inputL2])
+    dense1 = Dense(2, input_dim=2, activation='sigmoid')(merge_input)
+    output_listra = Dense(1, activation='relu')(dense1)
+
+    listra_model = Model(inputs=[inputL1, inputL2], outputs=output_listra, name='listra_classification')
+    listra_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy', 'recall'])
+    listra_model.summary()
+
+    # Treina o modelo das listras.
+    listra_model.fit([np_l1, np_l2], np_labels_listra)
+
 
     # Aqui devemos ter no dataframe ou em uma lista, o que for mais conveniente, os vetores com os pixels das 8 imagens
     # preprocessadas para a rede treinar e seus respectivos rótulos em cor e espessura da faixa (conforme/n]ao-conforme).
@@ -487,23 +674,44 @@ def main_DL(registration_number, input_filename):
     # colunas [ "ID", "Cor Conforme", "Listra Conforme"].
     #
     # 1. Carregar base de validação fornecida em input_filename com preprocess(), igual ao treino.
-    df_validation = load_data(input_filename)  # Carregar imagens com find_imgs_by_id(id) e preprocessá-las
-    #                                            com preprocess(img_row["src_img"])
-    # 2. Preparar dataframe pra receber os resultados.
-    df_results = pd.DataFrame(columns=["ID", "Cor Conforme", "Listra Conforme"])
-    # 3. Para cada imagem de validação:
-    #     3.1. Usar modelo treinado para classificar conformidade de cor
-    #     3.2. Usar modelo treinado para classificar conformidade da faixa
-    # 4. Adicionar resultados dessa instância/imagem no dataframe de resultados.
-    df_results.loc[len(df_results)] = ["ID069", 1, 0]
-    # 5. Após processar todas as instâncias de validação, imprimir acurácia e recall.
+    df_validation = load_data_dl(input_filename)
+    df_validation = encode_labels_database(df_validation)
 
-    # Retornar o dataframee de resultados nas colunas [ "ID", "Cor Conforme", "Listra Conforme"].
-    # Quando isso voltar para 'if __name__ == "__main__":' vai ser salvo como um CSV para o prof avaliar os resultados.
-    #
-    # 1. Retornar dataframe de resultados aqui.
+    # Extrai dados para rodar validação das cores e faz predições.
+    id_set, data_test_color, labels_test_color = get_data_color_from_df(df_validation)
+    predictions_color = color_model.predict(data_test_color)
+    # Usar média aritmética da classificação de cada foto do cabo para decidir se ele está conforme ou não.
+    pred_color_results = []
+    for i in range(0, len(predictions_color), 8):
+        s = 0
+        for j in range(0, 7):
+            s = s + predictions_color[i + j]
+        s = s / 8
+        s = 1 if s > 0.5 else 0
+        pred_color_results.append(s)
+
+    # Extrai dados para rodar validação das listras e faz predições.
+    id_set, n1_test_listra, n2_test_listra, labels_test_listra = get_data_listra_from_df(df_validation)
+    predictions_listra = listra_model.predict([n1_test_listra, n2_test_listra])
+    # Usar média aritmética da classificação de cada foto da listra para decidir se a listra está conforme ou não.
+    pred_listra_results = []
+    for i in range(0, len(predictions_listra), 8):
+        s = 0
+        for j in range(0, 7):
+            s = s + predictions_listra[i + j]
+        s = s / 8
+        s = 1 if s > 0.5 else 0
+        pred_listra_results.append(s)
+
+    # Monta dataframe com resultados.
+    df_results = pd.DataFrame({
+        "ID": df_validation['ID'],
+        "Cor Conforme": pred_color_results,
+        "Listra Conforme": pred_listra_results
+    })
+
+    # E retorna resutlados.
     return df_results
-    # Cabou.
 
 
 
@@ -600,10 +808,7 @@ if __name__ == "__main__":
         df_results = main_DL(args.registration_number, args.input_filename)
 
         # Write the result to file
-        output_file_path = os.path.join(global_output_folder, "results.csv")
-        # with open(output_file_path, "w") as out_file:
-        #     out_file.write(output_value)
-        df_results.to_csv(output_file_path, index=False)
+        df_results.to_csv("results.csv", index=False)
 
 
     # Rotina de PID.
